@@ -1,34 +1,67 @@
 <template>
   <ion-page>
-    <ion-header :translucent="true">
-      <ion-toolbar>
-        <ion-title>Blank</ion-title>
-      </ion-toolbar>
-    </ion-header>
-
-    <ion-content :fullscreen="true">
-      <ion-header collapse="condense">
-        <ion-toolbar>
-          <ion-title size="large">Blank</ion-title>
-        </ion-toolbar>
-      </ion-header>
-
-      <div id="container">
-        <strong>Ready to create an app?</strong>
-        <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
-      </div>
-    </ion-content>
+    <div v-for="button in buttons" :key="button.nholes">
+      <ion-button>{{ button.nholes }} hole</ion-button>
+    </div>
   </ion-page>
 </template>
 
-<script setup lang="ts">
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar } from '@ionic/vue';
+<script>
+import { ref } from "vue";
+import { IonPage, IonButton } from "@ionic/vue";
+
+import { Geolocation } from "@capacitor/geolocation";
+
+export default {
+  components: { IonPage, IonButton },
+
+  setup() {
+    // const allHoles = ref([])
+    const buttons = ref([]);
+    const error = ref(null);
+
+    //GEOLOCATION
+    const printCurrentPosition = async () => {
+      const coordinates = await Geolocation.watchPosition(
+        { enableHighAccuracy: true },
+        (position) => {
+          console.log("Current position:", position);
+        }
+      );
+    };
+
+    printCurrentPosition();
+
+    const buttonData = async () => {
+      try {
+        const data = await fetch("http://localhost:3001/buttonData");
+
+        if (!data.ok) {
+          throw Error("no data available!");
+        }
+        buttons.value = await data.json();
+        buttons.value = buttons.value.sort((a, b) => {
+          return a.nholes - b.nholes;
+        });
+      } catch (err) {
+        error.value = err.message;
+        console.log(error.value);
+      }
+    };
+
+    buttonData();
+
+    return {
+      buttons,
+    };
+  },
+};
 </script>
 
 <style scoped>
 #container {
   text-align: center;
-  
+
   position: absolute;
   left: 0;
   right: 0;
@@ -44,9 +77,9 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar } from '@ionic/vue
 #container p {
   font-size: 16px;
   line-height: 22px;
-  
+
   color: #8c8c8c;
-  
+
   margin: 0;
 }
 
